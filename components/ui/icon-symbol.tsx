@@ -8,23 +8,39 @@ import { OpaqueColorValue, type StyleProp, type TextStyle } from "react-native";
 type IconMapping = Record<SymbolViewProps["name"], ComponentProps<typeof MaterialIcons>["name"]>;
 type IconSymbolName = keyof typeof MAPPING;
 
-/**
- * Add your SF Symbols to Material Icons mappings here.
- * - see Material Icons in the [Icons Directory](https://icons.expo.fyi).
- * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
- */
 const MAPPING = {
-  "house.fill": "home",
+  "house.fill": "dashboard",
   "paperplane.fill": "send",
   "chevron.left.forwardslash.chevron.right": "code",
   "chevron.right": "chevron-right",
+  "chart.bar.fill": "bar-chart",
+  "doc.text.fill": "description",
+  "lightbulb.fill": "lightbulb",
+  "checklist": "checklist",
+  "arrow.up": "arrow-upward",
+  "arrow.down": "arrow-downward",
+  "exclamationmark.triangle.fill": "warning",
+  "bell.fill": "notifications",
+  "person.3.fill": "groups",
+  "gearshape.fill": "settings",
+  "magnifyingglass": "search",
+  "arrow.right": "arrow-forward",
+  "clock.fill": "schedule",
+  "flag.fill": "flag",
+  "star.fill": "star",
+  "info.circle.fill": "info",
+  "xmark": "close",
+  "plus": "add",
+  "minus": "remove",
+  "checkmark": "check",
+  "leaf.fill": "eco",
+  "globe": "public",
+  "shield.fill": "shield",
+  "brain": "psychology",
+  "newspaper.fill": "article",
+  "play.fill": "play-arrow",
 } as IconMapping;
 
-/**
- * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
- * This ensures a consistent look across platforms, and optimal resource usage.
- * Icon `name`s are based on SF Symbols and require manual mapping to Material Icons.
- */
 export function IconSymbol({
   name,
   size = 24,

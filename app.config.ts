@@ -32,7 +32,7 @@ const env = {
   appSlug: "renesas-esg-monitor",
   // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
   // Leave empty to use the default icon from assets/images/icon.png
-  logoUrl: "",
+  logoUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663343082833/Z9rks77zQRAcZT6HcCAZ7B/renesas-esg-icon-CHsU2kojxk5D6rJ3nssYts.png",
   scheme: schemeFromBundleId,
   iosBundleId: bundleId,
   androidPackage: bundleId,
