@@ -4,6 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
+import { fetchESGNews, getCachedNews, clearNewsCache, type LiveNewsItem } from "./news-service";
 
 export const appRouter = router({
   system: systemRouter,
@@ -14,6 +15,130 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+  }),
+
+  news: router({
+    /**
+     * Fetch live ESG news with AI categorization and analysis.
+     * Returns cached results if available, or fetches fresh data.
+     */
+    getLiveNews: publicProcedure
+      .input(
+        z.object({
+          forceRefresh: z.boolean().optional(),
+          category: z.enum(["all", "E", "S", "G", "ESG"]).optional(),
+          impactLevel: z.enum(["all", "high", "medium", "low"]).optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        try {
+          const opts = input ?? {};
+          const allNews = await fetchESGNews(opts.forceRefresh ?? false);
+
+          // Apply filters
+          let filtered = allNews;
+          if (opts.category && opts.category !== "all") {
+            filtered = filtered.filter((n) => n.category === opts.category);
+          }
+          if (opts.impactLevel && opts.impactLevel !== "all") {
+            filtered = filtered.filter((n) => n.impactLevel === opts.impactLevel);
+          }
+
+          return {
+            news: filtered,
+            totalCount: allNews.length,
+            filteredCount: filtered.length,
+            lastUpdated: new Date().toISOString(),
+            isLive: true,
+          };
+        } catch (error: any) {
+          console.error("Failed to fetch live news:", error?.message);
+          // Return cached news as fallback
+          const cached = getCachedNews();
+          return {
+            news: cached,
+            totalCount: cached.length,
+            filteredCount: cached.length,
+            lastUpdated: new Date().toISOString(),
+            isLive: false,
+          };
+        }
+      }),
+
+    /**
+     * Force refresh the news cache
+     */
+    refreshNews: publicProcedure.mutation(async () => {
+      try {
+        clearNewsCache();
+        const news = await fetchESGNews(true);
+        return {
+          success: true,
+          count: news.length,
+          lastUpdated: new Date().toISOString(),
+        };
+      } catch (error: any) {
+        console.error("News refresh failed:", error?.message);
+        return {
+          success: false,
+          count: 0,
+          lastUpdated: new Date().toISOString(),
+        };
+      }
+    }),
+
+    /**
+     * Analyze a specific news item in detail using AI
+     */
+    analyzeNewsDetail: publicProcedure
+      .input(z.object({
+        title: z.string(),
+        summary: z.string(),
+        category: z.enum(["E", "S", "G", "ESG"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const result = await invokeLLM({
+            messages: [
+              {
+                role: "system",
+                content: `You are a senior ESG strategist for Renesas Electronics Corporation (Japanese semiconductor company, TSE: 6723).
+
+Context:
+- ESG Score: E=68, S=72, G=75, Total=71.7 (Rank #4 among 8 semiconductor peers)
+- Key peers: STMicro (#1), Infineon (#2), TI (#3), NXP (#4)
+- Active compliance: EU CSRD (45%), Scope 3 measurement (30%), ISSB gap analysis (60%)
+- Carbon neutrality target: 2050
+
+Provide a detailed analysis including:
+1. **Impact Assessment**: Specific impact on Renesas operations, supply chain, and reporting
+2. **Competitive Implications**: How this affects Renesas vs. semiconductor peers
+3. **Recommended Actions**: 3-5 concrete, actionable steps with timelines
+4. **Cross-functional Coordination**: Which departments (HR, Procurement, Legal, Finance, etc.) need to be involved
+5. **Risk Level**: Overall risk rating with justification
+
+Keep the analysis professional, concise, and suitable for executive review. Under 400 words.`,
+              },
+              {
+                role: "user",
+                content: `Analyze this ESG development for Renesas:\n\nTitle: ${input.title}\nSummary: ${input.summary}\nCategory: ${input.category || "ESG"}`,
+              },
+            ],
+          });
+
+          const analysis = typeof result.choices[0]?.message?.content === "string"
+            ? result.choices[0].message.content
+            : "Detailed analysis unavailable.";
+
+          return { analysis, success: true };
+        } catch (error: any) {
+          console.error("Detailed news analysis failed:", error?.message);
+          return {
+            analysis: "Detailed analysis is temporarily unavailable. The AI service will retry automatically.",
+            success: false,
+          };
+        }
+      }),
   }),
 
   esg: router({

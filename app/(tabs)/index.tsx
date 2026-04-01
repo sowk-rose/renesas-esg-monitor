@@ -1,14 +1,14 @@
-import { ScrollView, Text, View, TouchableOpacity, Dimensions } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, Dimensions, ActivityIndicator } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { COMPANIES, REGULATIONS, NEWS_ITEMS, ACTION_ITEMS, getESGColor, getImpactColor, getStatusColor } from "@/lib/esg-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useRouter } from "expo-router";
+import { trpc } from "@/lib/trpc";
 
 const renesas = COMPANIES.find((c) => c.id === "renesas")!;
 const criticalRegulations = REGULATIONS.filter((r) => r.impactLevel === "critical" || r.impactLevel === "high");
 const activeActions = ACTION_ITEMS.filter((a) => a.status !== "completed");
-const latestNews = NEWS_ITEMS.slice(0, 3);
 
 function ScoreRing({ score, label, color, size = 72 }: { score: number; label: string; color: string; size?: number }) {
   const strokeWidth = 5;
@@ -64,9 +64,32 @@ function AlertBanner({ count, label, color }: { count: number; label: string; co
   );
 }
 
+interface DashboardNewsItem {
+  id: string;
+  title: string;
+  source: string;
+  date: string;
+  category: "E" | "S" | "G" | "ESG";
+  region: string;
+  summary: string;
+  impactLevel: "high" | "medium" | "low";
+  isLive?: boolean;
+}
+
 export default function DashboardScreen() {
   const colors = useColors();
   const router = useRouter();
+
+  // Fetch live news for dashboard preview
+  const liveNewsQuery = trpc.news.getLiveNews.useQuery(
+    { forceRefresh: false },
+    { refetchInterval: 5 * 60 * 1000, retry: 1, staleTime: 2 * 60 * 1000 }
+  );
+
+  // Combine live news (priority) with curated fallback, show top 3
+  const liveItems: DashboardNewsItem[] = (liveNewsQuery.data?.news ?? []).slice(0, 3).map((n: any) => ({ ...n, isLive: true }));
+  const curatedItems: DashboardNewsItem[] = NEWS_ITEMS.slice(0, 3).map((n) => ({ ...n, isLive: false }));
+  const displayNews: DashboardNewsItem[] = liveItems.length > 0 ? liveItems : curatedItems;
 
   return (
     <ScreenContainer className="px-0">
@@ -153,18 +176,38 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Latest News Preview */}
+        {/* Latest News Preview - Live + Curated */}
         <View className="px-5 mb-4">
           <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-base font-bold text-foreground">Latest ESG News</Text>
+            <View className="flex-row items-center gap-2">
+              <Text className="text-base font-bold text-foreground">Latest ESG News</Text>
+              {liveNewsQuery.data?.isLive && (
+                <View style={{ backgroundColor: "#EF444420", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, flexDirection: "row", alignItems: "center", gap: 3 }}>
+                  <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: "#EF4444" }} />
+                  <Text style={{ fontSize: 9, fontWeight: "700", color: "#EF4444" }}>LIVE</Text>
+                </View>
+              )}
+            </View>
             <TouchableOpacity onPress={() => router.push("/(tabs)/insights" as any)}>
               <Text style={{ color: "#00A0E9", fontSize: 13, fontWeight: "600" }}>View All</Text>
             </TouchableOpacity>
           </View>
+          {liveNewsQuery.isLoading && (
+            <View className="items-center py-4">
+              <ActivityIndicator size="small" color="#003366" />
+              <Text className="text-xs text-muted mt-2">Fetching live news...</Text>
+            </View>
+          )}
           <View className="gap-3">
-            {latestNews.map((news) => (
+            {displayNews.map((news) => (
               <View key={news.id} className="bg-surface rounded-xl p-4 border border-border">
                 <View className="flex-row items-center gap-2 mb-2">
+                  {news.isLive && (
+                    <View style={{ backgroundColor: "#EF444420", paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, flexDirection: "row", alignItems: "center", gap: 3 }}>
+                      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: "#EF4444" }} />
+                      <Text style={{ fontSize: 8, fontWeight: "700", color: "#EF4444" }}>LIVE</Text>
+                    </View>
+                  )}
                   <View style={{ backgroundColor: getESGColor(news.category) + "20", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
                     <Text style={{ color: getESGColor(news.category), fontSize: 11, fontWeight: "700" }}>{news.category}</Text>
                   </View>
