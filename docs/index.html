@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Renesas ESG Monitor</title>
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            renesas: { 50: '#E6F4FE', 100: '#CCE9FD', 200: '#99D3FB', 300: '#66BDF9', 400: '#33A7F7', 500: '#00A0E9', 600: '#0080BA', 700: '#00608C', 800: '#00405D', 900: '#00202F' },
+            navy: { 50: '#E6EBF0', 100: '#CCD7E1', 200: '#99AFC3', 300: '#6687A5', 400: '#335F87', 500: '#003366', 600: '#002952', 700: '#001F3D', 800: '#001429', 900: '#000A14' },
+            esg: { e: '#10B981', s: '#6366F1', g: '#F59E0B' },
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: #1E293B; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    .sidebar-item { transition: all 0.15s ease; }
+    .sidebar-item:hover { background: rgba(0,51,102,0.08); }
+    .sidebar-item.active { background: rgba(0,160,233,0.1); color: #00A0E9; border-right: 3px solid #00A0E9; }
+    .card { background: white; border-radius: 12px; border: 1px solid #E2E8F0; transition: box-shadow 0.2s; }
+    .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    .score-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .progress-bar { height: 6px; border-radius: 3px; background: #E2E8F0; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+    .tab-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; background: transparent; color: #64748B; }
+    .tab-btn.active { background: #003366; color: white; }
+    .tab-btn:hover:not(.active) { background: #F1F5F9; }
+    .filter-chip { padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid #E2E8F0; background: transparent; color: #64748B; transition: all 0.15s; }
+    .filter-chip.active { border-color: currentColor; color: white; }
+    .news-card { cursor: pointer; transition: all 0.15s; }
+    .news-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #EF4444; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .fade-in { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .chart-container { position: relative; }
+    .tooltip { position: absolute; background: #1E293B; color: white; padding: 8px 12px; border-radius: 8px; font-size: 12px; pointer-events: none; z-index: 50; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div id="app" class="flex h-screen overflow-hidden"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
